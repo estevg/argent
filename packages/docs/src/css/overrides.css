@@ -438,7 +438,11 @@ article [class*="llmDropdownItem"]:hover {
   transform: rotate(180deg);
 }
 
-.product-switcher__menu > ul {
+/*
+ * The list sits inside the sidebar menu, whose theme rules zero the padding of nested
+ * lists and links. The extra `.product-switcher` ancestor outweighs them.
+ */
+.product-switcher .product-switcher__menu > ul {
   position: absolute;
   z-index: var(--ifm-z-index-dropdown);
   left: 0;
@@ -451,10 +455,15 @@ article [class*="llmDropdownItem"]:hover {
   border-radius: var(--swm-radius-small);
 }
 
-.product-switcher__menu > ul a {
+.product-switcher .product-switcher__menu > ul > li {
+  margin: 0;
+  padding: 0;
+}
+
+.product-switcher .product-switcher__menu > ul a {
   display: flex;
   align-items: center;
-  gap: 8px;
+  margin: 0;
   padding: 8px 10px;
   font-size: 14px;
   font-weight: 500;
@@ -464,16 +473,16 @@ article [class*="llmDropdownItem"]:hover {
   text-decoration: none;
 }
 
-.product-switcher__menu > ul a:hover {
+.product-switcher .product-switcher__menu > ul a:hover {
   color: var(--swm-dropdown-versions-item-hover);
   background-color: var(--swm-off-background);
 }
 
-.product-switcher__menu > ul a[aria-current] {
+.product-switcher .product-switcher__menu > ul a[aria-current] {
   color: var(--swm-dropdown-versions-item-active);
   background-color: var(--swm-dropdown-versions-item-background-active);
 }
 
-.product-switcher__menu > ul a[aria-current]:hover {
+.product-switcher .product-switcher__menu > ul a[aria-current]:hover {
   color: var(--swm-dropdown-versions-item-active);
 }
