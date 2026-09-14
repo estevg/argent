@@ -340,11 +340,23 @@ article [class*="llmDropdownItem"]:hover {
 
 /*
  * Product switcher - the first sidebar item, a native <details> dropdown that names the
- * current product (see src/theme/ProductSwitcher). The summary reads as a pill on the
+ * current product (see src/theme/ProductSwitcher). The summary reads as a pill across the
  * sidebar panel, the open list as a flat panel in the dropdown colours of the theme.
+ *
+ * The shared theme wraps every sidebar item in a flex <div>. That wrapper, not the item,
+ * sticks to the top of the scrolling menu so the pages scroll underneath the switcher.
  */
+.menu__list > div:first-child:has(> .product-switcher) {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 8px 0 12px;
+  background-color: var(--swm-sidebar-background);
+}
+
 .product-switcher {
-  margin: 8px 0 16px;
+  flex: 1;
+  min-width: 0;
 }
 
 .product-switcher__menu {
@@ -354,8 +366,8 @@ article [class*="llmDropdownItem"]:hover {
 .product-switcher__menu > summary {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
+  width: 100%;
   padding: 8px 12px;
   font-family: var(--swm-body-font);
   font-size: 14px;
@@ -382,13 +394,24 @@ article [class*="llmDropdownItem"]:hover {
   background-color: var(--swm-off-background);
 }
 
-.product-switcher__menu > summary svg {
+.product-switcher__label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-switcher__icon,
+.product-switcher__chevron {
   flex-shrink: 0;
   color: var(--swm-sidebar-icon-color);
+}
+
+.product-switcher__chevron {
   transition: transform 0.15s;
 }
 
-.product-switcher__menu[open] > summary svg {
+.product-switcher__menu[open] > summary .product-switcher__chevron {
   transform: rotate(180deg);
 }
 
@@ -406,7 +429,9 @@ article [class*="llmDropdownItem"]:hover {
 }
 
 .product-switcher__menu > ul a {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 10px;
   font-size: 14px;
   font-weight: 500;
@@ -426,6 +451,7 @@ article [class*="llmDropdownItem"]:hover {
   background-color: var(--swm-dropdown-versions-item-background-active);
 }
 
+.product-switcher__menu > ul a[aria-current] .product-switcher__icon,
 .product-switcher__menu > ul a[aria-current]:hover {
   color: var(--swm-dropdown-versions-item-active);
 }

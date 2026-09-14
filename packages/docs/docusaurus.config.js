@@ -145,10 +145,9 @@ const config = {
       },
     }),
   customFields: {
-    products: products.map(({ id, label }) => ({ id, label })),
+    products: products.map(({ id, label, icon }) => ({ id, label, icon })),
   },
   plugins: [
-    process.env.NODE_ENV !== "production" && "@docusaurus/plugin-debug",
     // One docs instance per product beyond the default one the classic preset owns.
     ...otherProducts.map((product) => [
       "@docusaurus/plugin-content-docs",

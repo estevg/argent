@@ -16,7 +16,7 @@ The site documents more than one product. `products.js` lists them, and the side
 switcher at the top of the docs sidebar (`src/theme/ProductSwitcher/`) shows them in that
 order.
 
-- **Argent Toolkit** is the `default` product. Its pages live at the root of `docs/` and
+- **Argent** is the `default` product. Its pages live at the root of `docs/` and
   its URLs at `/docs/...`.
 - **Argent Cloud** lives in `docs/cloud/` with URLs at `/docs/cloud/...`.
 
