@@ -381,11 +381,9 @@ article [class*="llmDropdownItem"]:hover {
   mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
 }
 
-/* The pill reaches 12px into the menu padding on each side, past the text column. */
 .product-switcher {
-  flex: 1;
-  min-width: 0;
-  margin: 0 -12px;
+  width: 217px;
+  max-width: 100%;
 }
 
 .product-switcher__menu {
