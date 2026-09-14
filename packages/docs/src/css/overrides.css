@@ -337,3 +337,95 @@ article [class*="llmDropdownItem"]:hover {
   color: var(--ifm-font-color-base);
   background-color: var(--swm-off-background);
 }
+
+/*
+ * Product switcher - the first sidebar item, a native <details> dropdown that names the
+ * current product (see src/theme/ProductSwitcher). The summary reads as a pill on the
+ * sidebar panel, the open list as a flat panel in the dropdown colours of the theme.
+ */
+.product-switcher {
+  margin: 8px 0 16px;
+}
+
+.product-switcher__menu {
+  position: relative;
+}
+
+.product-switcher__menu > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  font-family: var(--swm-body-font);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ifm-font-color-base);
+  background-color: var(--swm-background);
+  border: 1px solid var(--swm-border);
+  border-radius: var(--swm-radius-small);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+
+.product-switcher__menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.product-switcher__menu > summary:hover,
+.product-switcher__menu[open] > summary {
+  background-color: var(--swm-off-background);
+}
+
+.product-switcher__menu > summary svg {
+  flex-shrink: 0;
+  color: var(--swm-sidebar-icon-color);
+  transition: transform 0.15s;
+}
+
+.product-switcher__menu[open] > summary svg {
+  transform: rotate(180deg);
+}
+
+.product-switcher__menu > ul {
+  position: absolute;
+  z-index: var(--ifm-z-index-dropdown);
+  left: 0;
+  right: 0;
+  margin: 4px 0 0;
+  padding: 8px;
+  list-style: none;
+  background-color: var(--swm-background);
+  border: 1px solid var(--swm-border);
+  border-radius: var(--swm-radius-small);
+}
+
+.product-switcher__menu > ul a {
+  display: block;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--swm-dropdown-versions-item);
+  border: 1px solid transparent;
+  border-radius: var(--swm-radius-small);
+  text-decoration: none;
+}
+
+.product-switcher__menu > ul a:hover {
+  color: var(--swm-dropdown-versions-item-hover);
+  background-color: var(--swm-off-background);
+}
+
+.product-switcher__menu > ul a[aria-current] {
+  color: var(--swm-dropdown-versions-item-active);
+  background-color: var(--swm-dropdown-versions-item-background-active);
+}
+
+.product-switcher__menu > ul a[aria-current]:hover {
+  color: var(--swm-dropdown-versions-item-active);
+}
