@@ -7,16 +7,13 @@
  * `docs/`. Every other product is its own docs plugin instance in a folder under `docs/`,
  * so the shared theme's llms.txt plugin, which walks `docs/`, still sees every page.
  *
- * `icon` names an entry in the icon map of src/theme/ProductSwitcher.
- *
  * To add a product: add an entry here and create `docs/<id>/` with its categories.
  */
 const products = [
-  { id: "default", label: "Argent", icon: "wrench", dir: "docs", routeBasePath: "docs" },
+  { id: "default", label: "Argent", dir: "docs", routeBasePath: "docs" },
   {
     id: "cloud",
     label: "Argent Cloud",
-    icon: "cloud",
     dir: "docs/cloud",
     routeBasePath: "docs/cloud",
   },

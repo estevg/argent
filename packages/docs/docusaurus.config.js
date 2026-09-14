@@ -145,7 +145,7 @@ const config = {
       },
     }),
   customFields: {
-    products: products.map(({ id, label, icon }) => ({ id, label, icon })),
+    products: products.map(({ id, label }) => ({ id, label })),
   },
   plugins: [
     // One docs instance per product beyond the default one the classic preset owns.

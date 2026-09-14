@@ -428,13 +428,9 @@ article [class*="llmDropdownItem"]:hover {
   white-space: nowrap;
 }
 
-.product-switcher__icon,
 .product-switcher__chevron {
   flex-shrink: 0;
   color: var(--swm-sidebar-icon-color);
-}
-
-.product-switcher__chevron {
   transition: transform 0.15s;
 }
 
@@ -478,7 +474,6 @@ article [class*="llmDropdownItem"]:hover {
   background-color: var(--swm-dropdown-versions-item-background-active);
 }
 
-.product-switcher__menu > ul a[aria-current] .product-switcher__icon,
 .product-switcher__menu > ul a[aria-current]:hover {
   color: var(--swm-dropdown-versions-item-active);
 }
