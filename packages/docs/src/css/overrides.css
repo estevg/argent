@@ -348,7 +348,7 @@ article [class*="llmDropdownItem"]:hover {
  */
 .menu__list > div:first-child:has(> .product-switcher) {
   position: sticky;
-  top: 0;
+  top: -8px;
   z-index: 2;
   /*
    * The menu scrolls inside its own 8px top padding (set on nav.menu below), so the
