@@ -350,7 +350,12 @@ article [class*="llmDropdownItem"]:hover {
   position: sticky;
   top: 0;
   z-index: 2;
-  padding: 8px 0 12px;
+  /*
+   * The menu scrolls inside its own 8px top padding (set on nav.menu below), so the
+   * wrapper reaches up over that strip and pads it back, or the items show through it.
+   */
+  margin-top: -8px;
+  padding: 16px 0 12px;
   background-color: var(--swm-sidebar-background);
 }
 
