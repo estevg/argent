@@ -356,12 +356,36 @@ article [class*="llmDropdownItem"]:hover {
    */
   margin-top: -8px;
   padding: 16px 0 12px;
-  background-color: var(--swm-sidebar-background);
 }
 
+/*
+ * The items scroll under the switcher through a progressive blur: a backdrop layer that
+ * covers the wrapper and the menu padding around it, masked so the blur and the tint
+ * fade out below the pill instead of ending on a hard edge.
+ */
+.menu__list > div:first-child:has(> .product-switcher)::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 -24px -20px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--swm-sidebar-background) 0%,
+    color-mix(in srgb, var(--swm-sidebar-background) 70%, transparent) 55%,
+    transparent 100%
+  );
+  -webkit-backdrop-filter: blur(30px);
+  backdrop-filter: blur(30px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+}
+
+/* The pill reaches 12px into the menu padding on each side, past the text column. */
 .product-switcher {
   flex: 1;
   min-width: 0;
+  margin: 0 -12px;
 }
 
 .product-switcher__menu {
