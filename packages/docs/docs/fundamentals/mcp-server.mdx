@@ -7,7 +7,14 @@ sidebar_custom_props:
   icon: server
 ---
 
-Argent is an MCP server for mobile, TV and desktop apps. The Model Context Protocol (MCP) is the standard that coding agents use to call external tools. The Argent MCP server gives the agent tools to boot devices, tap the screen, read the UI tree, capture screenshots, inspect network traffic and profile the app.
+Argent is an MCP server for mobile, TV and desktop apps. The Model Context Protocol (MCP) is the standard that coding agents use to call external tools. The Argent MCP server gives the agent tools to:
+
+- boot simulators, emulators and devices,
+- tap the screen and type text,
+- read the UI tree,
+- capture screenshots,
+- inspect network traffic,
+- profile the app.
 
 The Argent MCP server works with Claude Code, Cursor, VS Code, Windsurf, Zed, Gemini CLI, Codex CLI, opencode and other MCP clients. See [Supported editors](/docs/reference/editors) for the full list.
 
@@ -44,13 +51,15 @@ The key of the top-level object depends on the editor. Claude Code, Cursor and W
 
 ## How the MCP server works
 
-The editor starts `argent mcp` as a child process and talks to it over standard input and output. The MCP server does not control the devices itself. The MCP server forwards each tool call to the Argent tool-server, a shared local service that owns the simulators, emulators and device sessions.
+The editor starts `argent mcp` as a child process and talks to it over standard input and output. The MCP server does not control the devices itself. The MCP server forwards each tool call to the Argent tool-server. The tool-server owns the simulators, emulators and device sessions.
 
-All agents on the machine share one tool-server. Run `argent server status` to see the state of the tool-server, and `argent server logs` to read its output.
+By default, the MCP server starts a local tool-server on the first tool call. All agents on the machine share this local tool-server. When `argent link` or `ARGENT_TOOLS_URL` names a remote tool-server, the MCP server sends the tool calls there instead.
+
+Run `argent server status` to see the state of the local tool-server. Run `argent server logs` to read its output.
 
 ## Configure the MCP server
 
-Environment variables in the MCP server entry change where the tool-server runs and where the MCP server writes its log. See [Configuration](/docs/reference/configuration#mcp-server) for the list of variables.
+Environment variables in the MCP server entry configure the MCP server. `ARGENT_TOOLS_URL` selects the tool-server that receives the tool calls. `ARGENT_MCP_LOG` selects the file where the MCP server writes its log of tool calls. See [Configuration](/docs/reference/configuration#mcp-server) for the list of variables.
 
 ## Tools
 
