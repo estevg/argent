@@ -43,4 +43,4 @@ sidebar_custom_props:
 
 **The machine was released while a test ran.** The idle timeout expired because no `sim-remote` command ran for 15 minutes. Run `sim-remote keepalive <TIME>` next to the test, or increase `SIM_REMOTE_IDLE_TIMEOUT_SECS`. See [Sessions and limits](/docs/cloud/reference/sessions).
 
-**Maestro or Appium cannot start the test runner.** Read the log of the `xcodebuild` process: `xctest_runner_*.log` for Maestro, or the Appium server log with `appium:showXcodeLog: true`. The shim writes its steps there. See [Maestro and Appium shims](/docs/cloud/reference/test-drivers).
+**Maestro or Appium cannot start the test runner.** Read the log of the `xcodebuild` process: `xctest_runner_*.log` for Maestro, or the Appium server log with `appium:showXcodeLog: true`. The shim writes its steps there. See [Maestro](/docs/cloud/integrations/maestro) and [Appium](/docs/cloud/integrations/appium).

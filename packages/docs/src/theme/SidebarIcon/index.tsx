@@ -25,6 +25,7 @@ import {
   Terminal,
   Timer,
   Video,
+  Workflow,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -61,6 +62,7 @@ const ICONS: Record<string, LucideIcon> = {
   "terminal": Terminal,
   "timer": Timer,
   "video": Video,
+  "workflow": Workflow,
   "wrench": Wrench,
 };
 

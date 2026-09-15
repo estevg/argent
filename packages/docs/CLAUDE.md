@@ -21,7 +21,9 @@ order.
 - **Argent Cloud** lives in `docs/cloud/` with URLs at `/docs/cloud/...`.
 
 Every product is its own docs plugin instance with the same options, the same `sidebars.js`
-and the same three categories. `docusaurus.config.js` builds the instances from
+and the same three categories. Argent Cloud adds a fourth category, `integrations/`, between
+`features/` and `reference/`: one page per external tool (Argent, Maestro, Appium, GitHub
+Actions) that mixes the concept with the exact options of that tool. `docusaurus.config.js` builds the instances from
 `products.js`, so a product folder holds content only.
 
 To add a product:
