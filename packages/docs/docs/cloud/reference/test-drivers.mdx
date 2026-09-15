@@ -1,0 +1,104 @@
+---
+sidebar_position: 6
+sidebar_label: Maestro and Appium shims
+title: Maestro and Appium shims
+sidebar_custom_props:
+  icon: flask-conical
+---
+
+```
+sim-remote install-shims [--shell posix|fish] [--dir <DIR>]
+```
+
+`install-shims` writes the stand-in tools, called shims, and prints the shell code that puts them on `PATH`. The command runs without a session. The scripts are embedded in the `sim-remote` binary, and the command rewrites them on every run.
+
+## Options
+
+| Option                | Description                                                                                                                                                  |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--shell posix\|fish` | The dialect of the printed code. Without it, `sim-remote` reads `$SHELL` and selects `fish` only for fish                                                    |
+| `--dir <DIR>`         | The directory for the shims. Without it, `sim-remote` uses `$SIM_REMOTE_SHIM_DIR`, then `$XDG_CACHE_HOME/sim-remote/shims`, then `~/.cache/sim-remote/shims` |
+
+Apply the printed code in your shell:
+
+```bash
+eval "$(sim-remote install-shims)"              # sh, bash, zsh
+```
+
+```fish
+sim-remote install-shims --shell fish | source  # fish
+```
+
+In fish, `eval` applies nothing and prints no error. Use `source`.
+
+## Files and exports
+
+The command writes these files: `xcrun`, `xcodebuild`, `plutil`, `applesimutils`, `xcode-select`, `open`, `appium-host.cjs` and a stand-in `Xcode.app`.
+
+The printed code:
+
+- exports `SIM_REMOTE_SHIM_DIR` and `SIM_REMOTE_BIN`,
+- adds the directory to the front of `PATH` one time,
+- on Linux, adds `--require <DIR>/appium-host.cjs` to `NODE_OPTIONS`. This preload tells the Appium driver that it runs on macOS. It applies to Appium entry points only.
+
+## What each shim does
+
+| Shim            | Behaviour                                                                                                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `xcrun`         | Sends `simctl ...` to `sim-remote simctl`. Answers `devicectl list devices` with an empty list. Answers `--show-sdk-version` with the newest iOS runtime on the machine                      |
+| `xcodebuild`    | Installs the XCTest runner on the simulator, launches it, finds its port, and opens a forward tunnel to the local port that the driver polls. Build and inspect calls succeed and do nothing |
+| `plutil`        | Uses `plistutil` from libplist. Falls back to `/usr/bin/plutil` on a Mac                                                                                                                     |
+| `applesimutils` | Maps `--setPermissions` to `simctl privacy`                                                                                                                                                  |
+| `xcode-select`  | Points at the stand-in `Xcode.app`                                                                                                                                                           |
+| `open`          | Does nothing. `simctl boot` boots the simulator                                                                                                                                              |
+
+The `xcodebuild` shim installs the test runner one time per session. Set `SIM_REMOTE_FORCE_RUNNER_INSTALL=1` to install it on every run.
+
+## Maestro
+
+Prerequisites:
+
+- `sim-remote` on `PATH` and a session with a machine.
+- The stock `maestro` CLI and a JVM.
+- On Linux, `plistutil` from libplist 2.3.0 or newer (`apt install libplist-utils`).
+
+```bash
+maestro --udid <UDID> test flow.yaml
+```
+
+Maestro starts one test runner per `maestro test` invocation. The runner startup must fit in `MAESTRO_DRIVER_STARTUP_TIMEOUT` (default 120 seconds).
+
+## Appium
+
+Prerequisites:
+
+- `sim-remote` on `PATH` and a session with a machine.
+- The stock `appium` server with the `xcuitest` driver (`appium driver install xcuitest`).
+
+Capabilities:
+
+| Capability                  | Value                          | Notes                                                                                             |
+| --------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `platformName`              | `iOS`                          | Required                                                                                          |
+| `appium:automationName`     | `XCUITest`                     | Required                                                                                          |
+| `appium:udid`               | The UDID of a hosted simulator | Required. The driver boots the simulator if needed                                                |
+| `appium:isHeadless`         | `true`                         | Required. Without it, the driver shuts the simulator down to open a window                        |
+| `appium:app`                | A local `.app` path            | Optional. The shim uploads and installs it                                                        |
+| `appium:wdaLocalPort`       | Default `8100`                 | The local port that the shim tunnels to WebDriverAgent                                            |
+| `appium:mjpegServerPort`    | Default `9100`                 | The local port that the shim tunnels to the MJPEG stream                                          |
+| `appium:wdaLaunchTimeout`   | Default 60 seconds             | Increase it on a slow network                                                                     |
+| `appium:updatedWDABundleId` | Ignored                        | The machine ships one WebDriverAgent build with the bundle id `com.facebook.WebDriverAgentRunner` |
+| `appium:wdaBindingIP`       | Ignored                        | WebDriverAgent binds to `127.0.0.1` on the machine                                                |
+
+The machine ships a prebuilt WebDriverAgent. The `xcodebuild` shim installs it from the machine, and nothing is uploaded. Capabilities that need another WebDriverAgent build, for example `appium:xcodeOrgId`, are ignored.
+
+## Known limits
+
+- One fetch of the view hierarchy takes about 5 seconds on a large app. A flow step with a short fixed timeout can expire while the UI is correct. Increase the timeouts of flows that you wrote for a local simulator.
+- The shim reads the runner port from a log line. If the runner never logs a port, the shim reports it.
+- The runner startup, the install, the port discovery and the tunnel must fit in the driver timeout.
+- Appium sees the Xcode version from `SIM_REMOTE_SHIM_XCODE_VERSION` (default `26.0`), because nothing reports the version on the machine.
+- `get_app_container` downloads a copy of the container. The `clearState` semantics of Maestro are best-effort.
+- Permission changes are limited to `simctl privacy`. Notifications, health and Face ID are not available.
+- `maestro start-device`, the `setProxy` flow command and crash report artifacts are not supported.
+- Each `xcrun` call opens a new connection, which costs a few seconds. The test steps share one tunnel and are not affected.
