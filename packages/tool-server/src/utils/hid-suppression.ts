@@ -154,9 +154,12 @@ export const DTUHIDD_ACTIVE_KEY = "com.apple.coredevice.dtuhidd.active";
  */
 async function guestCommand(udid: string, args: string[], stage: string): Promise<string> {
   const { exitCode, stdout, stderr } = await simctlSpawn(udid, { args });
-  if (exitCode !== undefined && exitCode !== 0) {
+  // Strict `=== 0`: a missing exit code is no confirmation either. `simctlSpawn`
+  // maps a null `exit_code` to `undefined`, and letting that through would let a
+  // command whose outcome is unknown count as a success.
+  if (exitCode !== 0) {
     throw new FailureError(
-      `\`${args.join(" ")}\` failed inside ${udid} (exit ${exitCode})` +
+      `\`${args.join(" ")}\` failed inside ${udid} (exit ${exitCode ?? "unknown"})` +
         (stderr.trim() ? `: ${stderr.trim()}` : ""),
       {
         error_code: FAILURE_CODES.IOS_HID_REVIVE_FAILED,
@@ -164,7 +167,7 @@ async function guestCommand(udid: string, args: string[], stage: string): Promis
         failure_area: "tool_server",
         error_kind: "subprocess",
         failure_command: "xcrun_simctl",
-        failure_exit_code: exitCode,
+        ...(exitCode !== undefined ? { failure_exit_code: exitCode } : {}),
       }
     );
   }

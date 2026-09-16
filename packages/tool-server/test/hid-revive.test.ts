@@ -16,8 +16,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 /** Every `simctl spawn` argv the code under test issues, in order. */
 const spawned: string[][] = [];
 let flagValue = "1";
-/** When set, the guest command whose argv[0] matches fails with this exit code. */
-let failing: { argv0: string; exitCode: number; stderr: string } | null = null;
+/**
+ * When set, the guest command whose argv starts with `prefix` fails. Matching a
+ * prefix rather than argv[0] alone is what lets a test fail `notifyutil -s`
+ * (the clear) without also failing `notifyutil -g` (the read before it).
+ * `exitCode: undefined` simulates simctl reporting no exit code at all.
+ */
+let failing: { prefix: string[]; exitCode: number | undefined; stderr: string } | null = null;
 
 // Only pulled in for the boot-time warm-up, which these tests do not exercise;
 // resolving it for real would need the workspace package built.
@@ -30,7 +35,7 @@ vi.mock("../src/utils/sim-remote", () => ({
     const args = opts.args ?? [];
     spawned.push(args);
     const reading = args[0] === "notifyutil" && args[1] === "-g";
-    if (failing && args[0] === failing.argv0) {
+    if (failing && failing.prefix.every((a, i) => args[i] === a)) {
       return Promise.resolve({ exitCode: failing.exitCode, stdout: "", stderr: failing.stderr });
     }
     return Promise.resolve({
@@ -101,7 +106,7 @@ describe("HID revive", () => {
   });
 
   it("fails loudly when backboardd cannot be restarted, instead of claiming success", async () => {
-    failing = { argv0: "launchctl", exitCode: 113, stderr: "Could not find service" };
+    failing = { prefix: ["launchctl"], exitCode: 113, stderr: "Could not find service" };
     await expect(reviveHidServices(UDID)).rejects.toThrow(
       /launchctl kill.*exit 113.*Could not find service/
     );
@@ -110,9 +115,16 @@ describe("HID revive", () => {
   it("does not restart backboardd if clearing the flag failed", async () => {
     // Restarting with the flag still set tears the rebuilt services down again —
     // better to stop and say so than to bounce SpringBoard for nothing.
-    failing = { argv0: "notifyutil", exitCode: 1, stderr: "notifyd unavailable" };
-    await expect(reviveHidServices(UDID)).rejects.toThrow(/notifyutil/);
+    failing = { prefix: ["notifyutil", "-s"], exitCode: 1, stderr: "notifyd unavailable" };
+    await expect(reviveHidServices(UDID)).rejects.toThrow(/notifyutil -s.*exit 1/);
+    // The read (-g) ran and succeeded; the clear (-s) is where it stopped.
+    expect(spawned.some((a) => a[0] === "notifyutil" && a[1] === "-g")).toBe(true);
     expect(spawned.some((a) => a[0] === "launchctl")).toBe(false);
+  });
+
+  it("treats a missing exit code as a failure, not a success", async () => {
+    failing = { prefix: ["launchctl"], exitCode: undefined, stderr: "" };
+    await expect(reviveHidServices(UDID)).rejects.toThrow(/exit unknown/);
   });
 
   it("reports the flag as it was before the repair", async () => {
