@@ -48,7 +48,7 @@ Two limits apply:
 
 Do not start the simulator more than two times. Starting it again cannot help once the window has closed.
 
-When restarting does not help, rebuild the input devices with the `revive-simulator-hid` tool. It works after the fact, on a simulator whose input is already dead, and it restores taps, hardware buttons and typed text together. It is disruptive: it closes the app in the foreground and restarts the home screen, so start your app again afterwards. That is why Argent does not do it for you when a simulator starts.
+When a restart does not restore the input, run the `revive-simulator-hid` tool. The tool rebuilds the input devices on a simulator that is already running. The tool restores taps, hardware buttons and typed text. The tool closes the app in the foreground and restarts the home screen. Start your app again after the tool completes. Argent does not run this tool when a simulator starts, because the tool closes the app.
 
 You can also quit DeviceHub and start the simulator again. This restores input without Argent.
 

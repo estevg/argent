@@ -16,6 +16,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 /** Every `simctl spawn` argv the code under test issues, in order. */
 const spawned: string[][] = [];
 let flagValue = "1";
+/** When set, the guest command whose argv[0] matches fails with this exit code. */
+let failing: { argv0: string; exitCode: number; stderr: string } | null = null;
 
 // Only pulled in for the boot-time warm-up, which these tests do not exercise;
 // resolving it for real would need the workspace package built.
@@ -28,6 +30,9 @@ vi.mock("../src/utils/sim-remote", () => ({
     const args = opts.args ?? [];
     spawned.push(args);
     const reading = args[0] === "notifyutil" && args[1] === "-g";
+    if (failing && args[0] === failing.argv0) {
+      return Promise.resolve({ exitCode: failing.exitCode, stdout: "", stderr: failing.stderr });
+    }
     return Promise.resolve({
       exitCode: 0,
       stdout: reading ? `com.apple.coredevice.dtuhidd.active ${flagValue}\n` : "",
@@ -38,6 +43,8 @@ vi.mock("../src/utils/sim-remote", () => ({
 
 const { DTUHIDD_ACTIVE_KEY, readSuppressionFlag, reviveHidServices } =
   await import("../src/utils/hid-suppression");
+const { createReviveSimulatorHidTool } =
+  await import("../src/tools/simulator/revive-simulator-hid");
 
 const UDID = "9977BDF1-83E1-4AF3-8BD7-C886B3F570A9";
 
@@ -45,6 +52,7 @@ describe("HID revive", () => {
   beforeEach(() => {
     spawned.length = 0;
     flagValue = "1";
+    failing = null;
   });
 
   it("reads the suppression flag from inside the guest", async () => {
@@ -92,10 +100,52 @@ describe("HID revive", () => {
     ]);
   });
 
+  it("fails loudly when backboardd cannot be restarted, instead of claiming success", async () => {
+    failing = { argv0: "launchctl", exitCode: 113, stderr: "Could not find service" };
+    await expect(reviveHidServices(UDID)).rejects.toThrow(
+      /launchctl kill.*exit 113.*Could not find service/
+    );
+  });
+
+  it("does not restart backboardd if clearing the flag failed", async () => {
+    // Restarting with the flag still set tears the rebuilt services down again —
+    // better to stop and say so than to bounce SpringBoard for nothing.
+    failing = { argv0: "notifyutil", exitCode: 1, stderr: "notifyd unavailable" };
+    await expect(reviveHidServices(UDID)).rejects.toThrow(/notifyutil/);
+    expect(spawned.some((a) => a[0] === "launchctl")).toBe(false);
+  });
+
   it("reports the flag as it was before the repair", async () => {
     expect(await reviveHidServices(UDID)).toEqual({ flagWasSet: true });
     flagValue = "0";
     spawned.length = 0;
     expect(await reviveHidServices(UDID)).toEqual({ flagWasSet: false });
+  });
+});
+
+describe("revive-simulator-hid tool", () => {
+  beforeEach(() => {
+    spawned.length = 0;
+    flagValue = "1";
+    failing = null;
+  });
+
+  it("runs the repair on an iOS simulator and reports the prior flag", async () => {
+    const tool = createReviveSimulatorHidTool();
+    await expect(tool.execute({}, { udid: UDID })).resolves.toEqual({
+      revived: true,
+      udid: UDID,
+      flagWasSet: true,
+    });
+    expect(spawned.some((a) => a[0] === "launchctl")).toBe(true);
+  });
+
+  it("refuses an Android serial before touching the device", async () => {
+    const tool = createReviveSimulatorHidTool();
+    await expect(tool.execute({}, { udid: "emulator-5554" })).rejects.toThrow(
+      /only applies to an iOS simulator/
+    );
+    // Nothing was spawned: the guard fires before any guest command.
+    expect(spawned).toEqual([]);
   });
 });

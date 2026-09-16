@@ -1,7 +1,9 @@
 import { z } from "zod";
+import { FAILURE_CODES } from "@argent/registry";
 import type { ToolDefinition } from "@argent/registry";
-import { reviveHidServices } from "../../utils/hid-suppression";
+import { InvalidToolInputError } from "../../utils/capability";
 import { resolveDevice } from "../../utils/device-info";
+import { reviveHidServices } from "../../utils/hid-suppression";
 
 const zodSchema = z.object({
   udid: z
@@ -30,9 +32,27 @@ export function createReviveSimulatorHidTool(): ToolDefinition<Params, Result> {
     services: () => ({}),
     async execute(_services, params) {
       const { udid } = params as Params;
-      // Rejects for a non-iOS id, which is the whole point: `notifyutil` and
-      // `backboardd` do not exist anywhere else.
-      resolveDevice(udid);
+      // `notifyutil` and `backboardd` exist only inside an iOS simulator. A
+      // physical iPhone has no `simctl spawn`, and an Android serial or a
+      // Chromium id would fail deep inside `simctlSpawn` with an unrelated
+      // error — reject up front with the reason instead.
+      const device = resolveDevice(udid);
+      const isSimulator =
+        (device.platform === "ios" || device.platform === "ios-remote") &&
+        device.kind === "simulator";
+      if (!isSimulator) {
+        throw new InvalidToolInputError(
+          `revive-simulator-hid only applies to an iOS simulator; ${udid} is ` +
+            `${device.platform} (${device.kind}). The CoreDevice HID teardown it ` +
+            `repairs happens only inside a simulator's backboardd.`,
+          {
+            error_code: FAILURE_CODES.TOOL_CAPABILITY_UNSUPPORTED_OPERATION,
+            failure_stage: "revive_hid_platform_guard",
+            failure_area: "tool_server",
+            error_kind: "unsupported",
+          }
+        );
+      }
       const { flagWasSet } = await reviveHidServices(udid);
       return { revived: true, udid, flagWasSet };
     },

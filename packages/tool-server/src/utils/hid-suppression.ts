@@ -74,6 +74,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
+import { FAILURE_CODES, FailureError } from "@argent/registry";
 import { simulatorServerBinaryPath } from "@argent/native-devtools-ios";
 
 import { simctlSpawn } from "./sim-remote";
@@ -142,6 +143,35 @@ export function startHidWarmUp(udid: string, deviceSet: DeviceSetPath): Promise<
 export const DTUHIDD_ACTIVE_KEY = "com.apple.coredevice.dtuhidd.active";
 
 /**
+ * Run one guest command and require it to succeed.
+ *
+ * `simctlSpawn` reports a failed guest command through `exitCode`, not by
+ * throwing, so a `notifyutil` or `launchctl` that fails would otherwise let
+ * {@link reviveHidServices} resolve and the tool claim `revived: true` over a
+ * simulator it never touched — the exact silent success this repair exists to
+ * end. `stderr` goes into the message because it is the only diagnostic the
+ * guest gives.
+ */
+async function guestCommand(udid: string, args: string[], stage: string): Promise<string> {
+  const { exitCode, stdout, stderr } = await simctlSpawn(udid, { args });
+  if (exitCode !== undefined && exitCode !== 0) {
+    throw new FailureError(
+      `\`${args.join(" ")}\` failed inside ${udid} (exit ${exitCode})` +
+        (stderr.trim() ? `: ${stderr.trim()}` : ""),
+      {
+        error_code: FAILURE_CODES.IOS_HID_REVIVE_FAILED,
+        failure_stage: stage,
+        failure_area: "tool_server",
+        error_kind: "subprocess",
+        failure_command: "xcrun_simctl",
+        failure_exit_code: exitCode,
+      }
+    );
+  }
+  return stdout;
+}
+
+/**
  * Read the suppression flag from inside the guest.
  *
  * Must be read in the guest: the simulator runs its own `notifyd`, so a
@@ -156,7 +186,11 @@ export const DTUHIDD_ACTIVE_KEY = "com.apple.coredevice.dtuhidd.active";
 export async function readSuppressionFlag(udid: string): Promise<boolean | null> {
   // `simctl spawn` needs a bare binary name; an absolute path fails with
   // SimXPCErrorDomain 111.
-  const { stdout } = await simctlSpawn(udid, { args: ["notifyutil", "-g", DTUHIDD_ACTIVE_KEY] });
+  const stdout = await guestCommand(
+    udid,
+    ["notifyutil", "-g", DTUHIDD_ACTIVE_KEY],
+    "hid_revive_read_flag"
+  );
   const match = stdout.match(/\s(\d+)\s*$/m);
   return match ? match[1] !== "0" : null;
 }
@@ -168,10 +202,12 @@ export async function readSuppressionFlag(udid: string): Promise<boolean | null>
  * daemon keeps running. Does nothing about services that are already terminated
  * — that needs {@link restartBackboardd}.
  */
-export async function clearSuppressionFlag(udid: string): Promise<void> {
-  await simctlSpawn(udid, {
-    args: ["notifyutil", "-s", DTUHIDD_ACTIVE_KEY, "0", "-p", DTUHIDD_ACTIVE_KEY],
-  });
+async function clearSuppressionFlag(udid: string): Promise<void> {
+  await guestCommand(
+    udid,
+    ["notifyutil", "-s", DTUHIDD_ACTIVE_KEY, "0", "-p", DTUHIDD_ACTIVE_KEY],
+    "hid_revive_clear_flag"
+  );
 }
 
 /**
@@ -184,10 +220,12 @@ export async function clearSuppressionFlag(udid: string): Promise<void> {
  * the flag first, or the new services are torn down again immediately and only
  * the digitizer survives.
  */
-export async function restartBackboardd(udid: string): Promise<void> {
-  await simctlSpawn(udid, {
-    args: ["launchctl", "kill", "SIGTERM", "system/com.apple.backboardd"],
-  });
+async function restartBackboardd(udid: string): Promise<void> {
+  await guestCommand(
+    udid,
+    ["launchctl", "kill", "SIGTERM", "system/com.apple.backboardd"],
+    "hid_revive_restart_backboardd"
+  );
 }
 
 /**
