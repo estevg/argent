@@ -46,7 +46,9 @@ Two limits apply:
 | Taps and gestures               | Argent protects these on every simulator it starts.                                                                                                                                                 |
 | Hardware buttons and typed text | Argent protects these on most simulators it starts. A fast Mac can still lose them. Start the simulator again to try once more. On iOS 26 and later, Argent may not be able to protect them at all. |
 
-Do not start the simulator more than two times. If two restarts do not restore the hardware buttons and typed text, Argent cannot protect them on this simulator.
+Do not start the simulator more than two times. Starting it again cannot help once the window has closed.
+
+When restarting does not help, rebuild the input devices with the `revive-simulator-hid` tool. It works after the fact, on a simulator whose input is already dead, and it restores taps, hardware buttons and typed text together. It is disruptive: it closes the app in the foreground and restarts the home screen, so start your app again afterwards. That is why Argent does not do it for you when a simulator starts.
 
 You can also quit DeviceHub and start the simulator again. This restores input without Argent.
 
